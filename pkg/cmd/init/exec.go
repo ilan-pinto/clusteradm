@@ -3,11 +3,17 @@ package init
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
 
 	"open-cluster-management.io/clusteradm/pkg/cmd/init/scenario"
 	"open-cluster-management.io/clusteradm/pkg/helpers"
 	"open-cluster-management.io/clusteradm/pkg/helpers/apply"
+	"open-cluster-management.io/clusteradm/pkg/helpers/asset"
 
 	"github.com/spf13/cobra"
 
@@ -28,6 +34,49 @@ func (o *Options) complete(cmd *cobra.Command, args []string) (err error) {
 		},
 	}
 	return nil
+}
+
+func replaceImageRepo( o *Options,r *asset.ScenarioResourcesReader ,files []string)  []string  {
+
+	newFileList := []string{}
+	_, callerFile, _, _ := runtime.Caller(0)
+	CurrentPath := filepath.Dir(callerFile)
+	baseFolderName := "scenario/init/tmp"
+	tmpBase := filepath.Join(CurrentPath,baseFolderName)	
+	tmpFolder := filepath.Join(tmpBase, "init")	
+
+
+	err := os.MkdirAll(tmpFolder, os.ModePerm)	
+	if err != nil {
+		klog.ErrorS(err ,"Unable to create new files folder"  )
+		return newFileList
+	}
+
+	for _ , file := range files {
+		
+		read, err := r.Asset(file)
+		if err != nil {
+			klog.ErrorS(err ,"unable to read file:" + file  )
+			panic(err)
+		}
+		
+		// replace repo 
+		newFile :=  filepath.Join(tmpBase, file) 
+
+		fmt.Println("**** New file path :  *** " + newFile )
+		os.Create(newFile)
+		newContents := strings.Replace(string(read), "quay.io", o.ClusteradmFlags.ImageRepo, -1)
+		err = ioutil.WriteFile(newFile, []byte(newContents), os.ModePerm)
+
+		if err != nil {
+			klog.ErrorS(err ,"unable to write file:" + file  )
+			panic(err) 
+		}
+		newFileList = append(newFileList, filepath.Join("init","tmp",file ) )
+		klog.InfoS("Successfully replaced image repo for: " + file )
+
+	}
+	return newFileList
 }
 
 func (o *Options) validate() error {
@@ -62,7 +111,7 @@ func (o *Options) run() error {
 		return err
 	}
 
-	applierBuilder := &apply.ApplierBuilder{}
+	applierBuilder := &apply.ApplierBuilder{};
 	applier := applierBuilder.WithClient(kubeClient, apiExtensionsClient, dynamicClient).Build()
 
 	files := []string{
@@ -89,17 +138,25 @@ func (o *Options) run() error {
 		"init/clustermanager_sa.yaml",
 	)
 
+	if o.ClusteradmFlags.ImageRepo != "" {		
+		files = replaceImageRepo(o ,reader, files)		
+	}
+	
 	out, err := applier.ApplyDirectly(reader, o.values, o.ClusteradmFlags.DryRun, "", files...)
 	if err != nil {
 		return err
 	}
 	output = append(output, out...)
 
+
+
+
 	//if service-account wait for the sa secret
 	if !o.useBootstrapToken && !o.ClusteradmFlags.DryRun {
 		err = wait.PollImmediate(1*time.Second, 10*time.Second, func() (bool, error) {
 			return waitForBootstrapToken(kubeClient)
 		})
+
 		if err != nil {
 			return err
 		}
