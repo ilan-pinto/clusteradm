@@ -46,5 +46,6 @@ func NewCmd(clusteradmFlags *genericclioptionsclusteradm.ClusteradmFlags, stream
 	cmd.Flags().StringVar(&o.outputFile, "output-file", "", "The generated resources will be copied in the specified file")
 	cmd.Flags().BoolVar(&o.useBootstrapToken, "use-bootstrap-token", false, "If set then the boostrap token will used instead of a service account token")
 	cmd.Flags().BoolVar(&o.force, "force", false, "If set then the hub will be reinitialized")
+	cmd.Flags().StringVar(&o.ImageRepo, "image-repo", "quay.io", "replace the default image repo quay.io with provided image")
 	return cmd
 }

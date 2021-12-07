@@ -20,13 +20,14 @@ import (
 )
 
 func (o *Options) complete(cmd *cobra.Command, args []string) (err error) {
-	klog.V(1).InfoS("init options:", "dry-run", o.ClusteradmFlags.DryRun, "force", o.force, "output-file", o.outputFile)
+	klog.V(1).InfoS("init options:", "dry-run", o.ClusteradmFlags.DryRun, "force", o.force, "output-file", o.outputFile,"image-repo", o.ImageRepo )
 	o.values = Values{
 		Hub: Hub{
 			TokenID:     helpers.RandStringRunes_az09(6),
 			TokenSecret: helpers.RandStringRunes_az09(16),
 		},
 	}
+	o.values.ImageRepo = o.ImageRepo
 	return nil
 }
 
@@ -53,7 +54,7 @@ func (o *Options) validate() error {
 }
 
 func (o *Options) run() error {
-	token := fmt.Sprintf("%s.%s", o.values.Hub.TokenID, o.values.Hub.TokenSecret)
+	token := fmt.Sprintf("%s.%s", o.values.Hub.TokenID, o.values.Hub.TokenSecret)	
 	output := make([]string, 0)
 	reader := scenario.GetScenarioResourcesReader()
 

@@ -17,12 +17,15 @@ type Options struct {
 	useBootstrapToken bool
 	//if true the hub will be reinstalled
 	force bool
+	//replace the default image repo quay.io with provided image
+	ImageRepo string
 }
 
 //Valus: The values used in the template
 type Values struct {
 	//The values related to the hub
 	Hub Hub `json:"hub"`
+	ImageRepo string 
 }
 
 //Hub: The hub values for the template
