@@ -14,7 +14,8 @@ mkdir -p $TEST_RESULT_DIR
 
 function init_hub() {
    echo "init_hub 1st parameter: "$1 >&2
-   local _CMDINITRESULT=`clusteradm init $1`
+   echo "init_hub 2st parameter: "$2 >&2
+   local _CMDINITRESULT=`clusteradm init $2`
    if [ $? != 0 ]
    then
       ERROR_REPORT=$ERROR_REPORT+"clusteradm init failed\n"
@@ -157,6 +158,34 @@ function gettokenscenario() {
    fi
 }
 
+function getquayimages(){
+   docker pull quay.io/open-cluster-management/registration:latest
+   docker tag quay.io/open-cluster-management/registration:latest docker.io/open-cluster-management/registration:latest 
+
+   docker pull quay.io/open-cluster-management/registration-operator:latest
+   docker tag quay.io/open-cluster-management/registration-operator:latest docker.io/open-cluster-management/registration-operator:latest
+
+   docker pull quay.io/open-cluster-management/placement
+   docker tag quay.io/open-cluster-management/placement docker.io/open-cluster-management/placement
+   
+   docker pull quay.io/open-cluster-management/work:latest
+   docker tag quay.io/open-cluster-management/work:latest docker.io/open-cluster-management/work:latest
+
+   kubectl config use-context kind-${CLUSTER_NAME}-hub 
+   CMDINITRESULT=$(init_hub --image-repo docker.io) 
+
+   if [ $? != 0 ]
+   then
+      echo "accept command result: "$CMDINITRESULT >&2
+      ERROR_REPORT=$ERROR_REPORT+"unable to init with local repo\n"
+   else
+      echo "accept command result: "$CMDINITRESULT >&2
+   fi
+
+
+}
+
+
 echo "With bootstrap token"
 echo "--------------------"
 export KUBECONFIG=$TEST_DIR/tmp/config.yaml
@@ -222,6 +251,18 @@ joinscenario_with_timeout c1 --timeout 400
 kind delete cluster --name ${CLUSTER_NAME}-hub
 kind delete cluster --name ${CLUSTER_NAME}-c1
 
+
+echo "Testing local image repo flag"
+echo "-------------------------------------"
+
+export KUBECONFIG=$TEST_DIR/tmp/config.yaml
+kind create cluster --name ${CLUSTER_NAME}-hub --config $TEST_DIR/kind-config/kind119-hub.yaml
+
+echo "Sleep 10 sec"
+sleep 10
+
+getquayimages
+kind delete cluster --name ${CLUSTER_NAME}-hub
 
 if [ -z "$ERROR_REPORT" ]
 then
