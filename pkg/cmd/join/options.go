@@ -21,6 +21,9 @@ type Options struct {
 	//The file to output the resources will be sent to the file.
 	outputFile string
 
+	//replace the default image repo quay.io with provided image
+	ImageRepo string
+
 }
 
 //Values: The values used in the template
@@ -29,6 +32,7 @@ type Values struct {
 	ClusterName string
 	//Hub: Hub information
 	Hub Hub
+	ImageRepo string 
 }
 
 //Hub: The hub values for the template

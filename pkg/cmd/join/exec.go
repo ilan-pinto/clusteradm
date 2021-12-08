@@ -30,8 +30,8 @@ import (
 )
 
 func (o *Options) complete(cmd *cobra.Command, args []string) (err error) {
-	klog.V(1).InfoS("join options:", "dry-run", o.ClusteradmFlags.DryRun, "cluster", o.clusterName, "api-server", o.hubAPIServer, o.outputFile)
-
+	klog.V(1).InfoS("join options:", "dry-run", o.ClusteradmFlags.DryRun, "cluster", o.clusterName, "api-server", o.hubAPIServer, o.outputFile ,"image-repo", o.ImageRepo)
+	o.values.ImageRepo = o.ImageRepo
 	o.values = Values{
 		ClusterName: o.clusterName,
 		Hub: Hub{

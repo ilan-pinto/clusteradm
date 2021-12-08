@@ -15,7 +15,9 @@ mkdir -p $TEST_RESULT_DIR
 function init_hub() {
    echo "init_hub 1st parameter: "$1 >&2
    echo "init_hub 2st parameter: "$2 >&2
-   local _CMDINITRESULT=`clusteradm init $2`
+   echo "init_hub 2st parameter: "$3 >&2
+   
+   local _CMDINITRESULT=`clusteradm init $2 $3`
    if [ $? != 0 ]
    then
       ERROR_REPORT=$ERROR_REPORT+"clusteradm init failed\n"
@@ -28,8 +30,9 @@ function join_hub() {
    echo "join_hub 2nd parameter: "$2 >&2
    echo "join_hub 3nd parameter: "$3 >&2
    echo "join_hub 4nd parameter: "$4 >&2
+   echo "join_hub 5st parameter: "$5 >&2
    local _CMDJOIN=`echo "$1" | cut -d ':' -f2-4 | cut -d '<' -f1`
-   _CMDJOIN="$_CMDJOIN $2 $3 $4"
+   _CMDJOIN="$_CMDJOIN $2 $3 $4 $5"
    local _CMDJOINRESULT=`$_CMDJOIN`
    if [ $? != 0 ]
    then
@@ -159,27 +162,17 @@ function gettokenscenario() {
 }
 
 function getquayimages(){
-   docker pull quay.io/open-cluster-management/registration:latest
-   docker tag quay.io/open-cluster-management/registration:latest docker.io/open-cluster-management/registration:latest 
-
-   docker pull quay.io/open-cluster-management/registration-operator:latest
-   docker tag quay.io/open-cluster-management/registration-operator:latest docker.io/open-cluster-management/registration-operator:latest
-
-   docker pull quay.io/open-cluster-management/placement
-   docker tag quay.io/open-cluster-management/placement docker.io/open-cluster-management/placement
-   
-   docker pull quay.io/open-cluster-management/work:latest
-   docker tag quay.io/open-cluster-management/work:latest docker.io/open-cluster-management/work:latest
+   echo "init hub with image repo" >&2
 
    kubectl config use-context kind-${CLUSTER_NAME}-hub 
-   CMDINITRESULT=$(init_hub --image-repo docker.io) 
-
+   CMDINITRESULT=$(init_hub --image-repo docker.io --dry-run) 
+ 
    if [ $? != 0 ]
    then
       echo "accept command result: "$CMDINITRESULT >&2
-      ERROR_REPORT=$ERROR_REPORT+"unable to init with local repo\n"
+      ERROR_REPORT=$ERROR_REPORT+"no CSR get approved\n"
    else
-      echo "accept command result: "$CMDINITRESULT >&2
+      echo "init command result: "$CMDINITRESULT >&2
    fi
 
 
